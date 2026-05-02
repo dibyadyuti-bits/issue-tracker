@@ -1,44 +1,108 @@
 # Architecture Overview
 
-## System Architecture
+## System Architecture (Microservices)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                     Client Layer (Frontend)                      │
 │  ┌───────────────────────────────────────────────────────────┐  │
-│  │   React Application (SPA)                                  │  │
-│  │  ├── Views (Pages)                                         │  │
-│  │  ├── Components (Reusable)                                 │  │
-│  │  ├── Context API (State Management)                        │  │
-│  │  └── Services (API Communication)                          │  │
+│  │   React Application (SPA)                                │  │
+│  │  ├── Views (Pages)                                       │  │
+│  │  ├── Components (Reusable)                               │  │
+│  │  ├── Context API (State Management)                      │  │
+│  │  └── Services (API Communication)                        │  │
 │  └───────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
                               │
                          HTTPS/REST
                               │
 ┌─────────────────────────────────────────────────────────────────┐
-│                   API Gateway / Server Layer                     │
+│                     API Gateway Layer                            │
 │  ┌───────────────────────────────────────────────────────────┐  │
-│  │  Express.js Server                                         │  │
-│  │  ├── Routes & Controllers                                  │  │
-│  │  ├── Middleware (Auth, Validation, Error)                  │  │
-│  │  ├── Business Logic                                        │  │
-│  │  └── Database Layer                                        │  │
+│  │  Express.js Gateway (Port 5000)                          │  │
+│  │  ├── JWT Verification                                    │  │
+│  │  ├── Route Proxying to Services                          │  │
+│  │  └── Central Error Handling                              │  │
 │  └───────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
                               │
-                     Database Protocol
-                              │
-┌─────────────────────────────────────────────────────────────────┐
-│                   Data Layer (Database)                          │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │  PostgreSQL                                                │  │
-│  │  ├── Users Table                                           │  │
-│  │  ├── Issues Table                                          │  │
-│  │  └── Indexes & Foreign Keys                                │  │
-│  └───────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
+                    ┌─────────┼─────────┐
+                    │         │         │
+              HTTP/REST   HTTP/REST  HTTP/REST
+                    │         │         │
+┌───────────────────┐ ┌───────┴───────┐ ┌───────────────────────┐
+│  Auth Service     │ │ Issue Service │ │   Comment Service     │
+│  (Port 5001)      │ │ (Port 5002)   │ │   (Port 5003)         │
+│  ───────────────  │ │ ───────────── │ │   ─────────────────   │
+│  • Register/Login │ │ • CRUD Issues │ │   • Add Comments      │
+│  • User Mgmt      │ │ • Filtering   │ │   • List Comments     │
+│  • JWT Issuance   │ │ • Assignment  │ │   • Delete Comments   │
+└────────┬──────────┘ └───────┬───────┘ └───────────┬───────────┘
+         │                    │                     │
+    Database              Database              Database
+         │                    │                     │
+┌────────▼──────────┐ ┌───────▼───────┐ ┌───────────▼───────────┐
+│  PostgreSQL       │ │  PostgreSQL   │ │   PostgreSQL          │
+│  auth_db          │ │  issue_db     │ │   comment_db          │
+│  • users table    │ │  • issues     │ │   • comments          │
+└───────────────────┘ └───────────────┘ └───────────────────────┘
 ```
+
+## Microservices Design
+
+### API Gateway
+- **Purpose**: Single entry point for all client requests
+- **Responsibilities**:
+  - JWT token verification for protected routes
+  - Request routing to appropriate microservice
+  - CORS handling
+  - Centralized error responses
+- **Port**: 5000
+
+### Auth Service
+- **Purpose**: User authentication and management
+- **Database**: `auth_db` (users table)
+- **Responsibilities**:
+  - User registration and login
+  - Password hashing with bcrypt
+  - JWT token generation
+  - User profile retrieval and updates
+- **Port**: 5001
+- **Routes**:
+  - `POST /auth/register`
+  - `POST /auth/login`
+  - `GET /users`
+  - `GET /users/:id`
+  - `PUT /users/:id`
+
+### Issue Service
+- **Purpose**: Issue tracking and management
+- **Database**: `issue_db` (issues table)
+- **Responsibilities**:
+  - Create, read, update, delete issues
+  - Filter issues by status, priority, category
+  - Issue assignment (via `assignedToId`)
+- **Port**: 5002
+- **Inter-service**: Calls Auth Service to populate `createdBy` and `assignedTo` user data
+- **Routes**:
+  - `GET /issues`
+  - `GET /issues/:id`
+  - `POST /issues`
+  - `PUT /issues/:id`
+  - `DELETE /issues/:id`
+
+### Comment Service
+- **Purpose**: Comments on issues
+- **Database**: `comment_db` (comments table)
+- **Responsibilities**:
+  - Add comments to issues
+  - Retrieve comments by issue
+  - Delete comments
+- **Port**: 5003
+- **Routes**:
+  - `GET /comments/issue/:issueId`
+  - `POST /comments/issue/:issueId`
+  - `DELETE /comments/:id`
 
 ## Component Hierarchy
 
@@ -47,75 +111,111 @@
 App
 ├── AuthContext Provider
 ├── IssueContext Provider
-├── Navigation
-├── Routes
-│   ├── HomePage
-│   ├── LoginPage
-│   ├── IssuesPage
-│   │   ├── Dashboard
-│   │   ├── IssueList
-│   │   └── IssueForm
-│   └── IssueDetailPage
-│       └── IssueDetail
-└── Footer
+├── BrowserRouter
+│   ├── Navigation
+│   ├── Routes
+│   │   ├── HomePage
+│   │   ├── LoginPage (AuthForm)
+│   │   └── IssuesPage
+│   │       ├── Dashboard
+│   │       ├── IssueList
+│   │       ├── IssueForm
+│   │       └── IssueDetail
+│   └── Footer
 ```
 
 ## Data Flow
 
-### Issue Creation Flow
+### Issue Creation Flow (Microservices)
 1. User fills IssueForm component
-2. Form submitted → onSubmit handler
-3. Data sent via issueService.createIssue()
-4. API call hits POST /api/v1/issues
-5. Controller receives and validates data
-6. Issue saved to PostgreSQL via Sequelize
-7. Response sent back to frontend
-8. IssueContext updated with new issue
-9. Component re-renders with new data
+2. Form submitted → `issueService.createIssue()`
+3. Request hits API Gateway (`POST /api/v1/issues`)
+4. Gateway verifies JWT
+5. Request proxied to Issue Service
+6. Issue Service creates issue in `issue_db`
+7. Response flows back through Gateway → Frontend
+8. IssueContext updated, component re-renders
 
-### Authentication Flow
+### Authentication Flow (Microservices)
 1. User enters credentials in AuthForm
-2. Form submitted to authService.login()
-3. API call hits POST /api/v1/auth/login
-4. Controller verifies credentials
-5. JWT token generated and returned
+2. `authService.login()` sends request to Gateway
+3. Gateway proxies to Auth Service
+4. Auth Service verifies credentials, generates JWT
+5. Token returned to frontend
 6. Token stored in localStorage
-7. AuthContext updated with user data
-8. User redirected to dashboard
+7. All subsequent requests include `Authorization: Bearer <token>`
+8. Gateway validates token before forwarding to services
 
-## MVC Pattern Implementation
+### Comment Flow (Microservices)
+1. User views IssueDetail, writes comment
+2. `commentService.addComment(issueId, text)`
+3. Gateway validates JWT, proxies to Comment Service
+4. Comment Service stores in `comment_db`
+5. Comment Service returns created comment
+6. Frontend appends comment to list
 
-### Backend MVC
-- **Model**: Sequelize models (User, Issue)
-- **View**: JSON API responses
-- **Controller**: Business logic handlers (authController, issueController)
+## Database Per Service
 
-### Frontend MVC
-- **Model**: State (Context API, local component state)
-- **View**: React components
-- **Controller**: Hooks, services, event handlers
+Each microservice owns its own PostgreSQL database:
+
+| Service | Database | Tables |
+|---------|----------|--------|
+| Auth Service | `auth_db` | `users` |
+| Issue Service | `issue_db` | `issues` |
+| Comment Service | `comment_db` | `comments` |
+
+### Cross-service References
+Services reference each other via UUID fields rather than foreign keys:
+- `Issue.createdById` → references a user in `auth_db`
+- `Comment.issueId` → references an issue in `issue_db`
+- `Comment.userId` → references a user in `auth_db`
+
+## Communication Patterns
+
+### Synchronous (HTTP)
+- Gateway → Auth Service (register/login)
+- Gateway → Issue Service (issue CRUD)
+- Gateway → Comment Service (comment CRUD)
+- Issue Service → Auth Service (fetch user details for response enrichment)
+
+### Asynchronous (Future Enhancement)
+- Redis pub/sub for cross-service events (e.g., issue assigned → notify user)
 
 ## Security Implementation
 
-- JWT authentication for API protection
-- Password hashing with bcryptjs
-- Input validation on frontend and backend
-- CORS configuration for cross-origin requests
-- Environment variables for sensitive data
-
-## Database Schema Relationships
-
-```
-User (1) ──── (many) Issue
-  │id              ├─ createdBy (User.id)
-  │               └─ assignedTo (User.id)
-  │
-  └──── (many) Comments
-         └─ user (User.id)
-```
+- JWT authentication at API Gateway layer
+- Each service independently validates JWT for direct access
+- Password hashing with bcryptjs in Auth Service
+- CORS configured on Gateway
+- Environment variables for all secrets
+- Database isolation per service
 
 ## Error Handling
 
-- Backend: Express error middleware catches and formats errors
-- Frontend: API interceptors handle error responses
-- User feedback through error components and alerts
+- Gateway: Catches proxy errors and returns 503 for unavailable services
+- Services: Express error middleware formats and returns JSON errors
+- Frontend: Axios interceptors handle HTTP error responses
+
+## Deployment
+
+### Docker Compose
+All services can be started together:
+```bash
+docker-compose up --build
+```
+
+### Independent Deployment
+Each service can be deployed independently:
+```bash
+# Auth Service
+cd backend/services/auth && npm install && npm run dev
+
+# Issue Service
+cd backend/services/issue && npm install && npm run dev
+
+# Comment Service
+cd backend/services/comment && npm install && npm run dev
+
+# Gateway
+cd backend/gateway && npm install && npm run dev
+```

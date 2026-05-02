@@ -1,6 +1,6 @@
-# Issue Tracker Application - Full Stack Project
+# Issue Tracker Application - Full Stack Project (Microservices)
 
-A comprehensive full-stack web application for tracking and managing issues, built with React (frontend) and Node.js/Express (backend).
+A full-stack web application for tracking and managing issues, built with **React** (frontend) and **Node.js/Express microservices** (backend).
 
 ## Project Overview
 
@@ -12,15 +12,27 @@ This application allows users to create, manage, and track issues with features 
 - Dashboard with issue statistics
 - Responsive UI
 
+## Architecture
+
+The backend follows a **microservices architecture** with:
+- **API Gateway**: Single entry point (port 5000)
+- **Auth Service**: User authentication (port 5001)
+- **Issue Service**: Issue management (port 5002)
+- **Comment Service**: Comment management (port 5003)
+
+Each service has its own PostgreSQL database.
+
 ## Tech Stack
 
 ### Backend
 - **Runtime**: Node.js
 - **Framework**: Express.js
-- **Database**: PostgreSQL
+- **Database**: PostgreSQL (per service)
 - **ORM**: Sequelize
 - **Authentication**: JWT (JSON Web Tokens)
 - **Password Security**: bcryptjs
+- **Gateway**: http-proxy-middleware
+- **Containerization**: Docker + Docker Compose
 
 ### Frontend
 - **Framework**: React 18
@@ -34,202 +46,267 @@ This application allows users to create, manage, and track issues with features 
 ```
 issue-tracker/
 ├── backend/
-│   ├── src/
-│   │   ├── config/         # Database and environment config
-│   │   ├── controllers/    # Business logic handlers
-│   │   ├── models/         # Database schemas (User, Issue)
-│   │   ├── routes/         # API endpoint definitions
-│   │   ├── middleware/     # Authentication and error handling
-│   │   ├── validators/     # Input validation logic
-│   │   ├── services/       # Service layer
-│   │   ├── utils/          # Helper functions
-│   │   └── index.js        # Server entry point
-│   ├── tests/              # Test files
-│   ├── docs/               # API documentation
-│   ├── package.json
-│   ├── .env.example
-│   └── README.md
+│   ├── gateway/                # API Gateway (port 5000)
+│   │   ├── src/
+│   │   │   ├── middleware/
+│   │   │   │   └── auth.js
+│   │   │   └── index.js
+│   │   ├── package.json
+│   │   ├── Dockerfile
+│   │   └── .env.example
+│   │
+│   └── services/
+│       ├── auth/               # Auth Service (port 5001)
+│       │   ├── src/
+│       │   │   ├── config/
+│       │   │   ├── controllers/
+│       │   │   ├── models/
+│       │   │   ├── routes/
+│       │   │   ├── middleware/
+│       │   │   └── index.js
+│       │   ├── package.json
+│       │   ├── Dockerfile
+│       │   └── .env.example
+│       │
+│       ├── issue/              # Issue Service (port 5002)
+│       │   ├── src/
+│       │   │   ├── config/
+│       │   │   ├── controllers/
+│       │   │   ├── models/
+│       │   │   ├── routes/
+│       │   │   ├── middleware/
+│       │   │   ├── utils/
+│       │   │   └── index.js
+│       │   ├── package.json
+│       │   ├── Dockerfile
+│       │   └── .env.example
+│       │
+│       └── comment/            # Comment Service (port 5003)
+│           ├── src/
+│           │   ├── config/
+│           │   ├── controllers/
+│           │   ├── models/
+│           │   ├── routes/
+│           │   ├── middleware/
+│           │   └── index.js
+│           ├── package.json
+│           ├── Dockerfile
+│           └── .env.example
 │
-├── frontend/
-│   ├── public/
-│   │   └── index.html
+├── frontend/                   # React Frontend (port 3000)
 │   ├── src/
-│   │   ├── components/     # Reusable React components
-│   │   ├── context/        # Context API providers
-│   │   ├── controllers/    # UI logic handlers
-│   │   ├── hooks/          # Custom React hooks
-│   │   ├── models/         # Data type definitions
-│   │   ├── services/       # API service calls
-│   │   ├── styles/         # CSS stylesheets
-│   │   ├── utils/          # Utility functions
-│   │   ├── views/          # Page components
-│   │   ├── App.js          # Main component
-│   │   ├── index.js        # React entry point
-│   │   └── index.css       # Global styles
+│   │   ├── components/
+│   │   ├── context/
+│   │   ├── views/
+│   │   ├── services/
+│   │   └── App.js
 │   ├── package.json
-│   ├── .env.example
-│   └── README.md
+│   └── .env.example
 │
-└── README.md (this file)
+├── docker-compose.yml          # Orchestrates all services
+└── README.md
 ```
 
 ## Getting Started
 
 ### Prerequisites
 - Node.js (v14+)
-- PostgreSQL
+- PostgreSQL (or Docker)
 - npm or yarn
+- Docker & Docker Compose (optional, recommended)
 
-### Backend Setup
+### Option 1: Docker Compose (Recommended)
 
-1. Navigate to backend directory:
+1. Clone the repository
+2. Create `.env` files from `.env.example` in each service folder
+3. Run all services:
    ```bash
-   cd backend
+   docker-compose up --build
    ```
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Create `.env` file:
-   ```bash
-   cp .env.example .env
-   ```
-
-4. Update the `.env` file with your PostgreSQL credentials:
-   ```
-   DB_HOST=localhost
-   DB_PORT=5432
-   DB_NAME=issue_tracker
-   DB_USER=postgres
-   DB_PASSWORD=your_password
-   ```
-
-5. Start the server:
-   ```bash
-   npm run dev
-   ```
-
-The backend will run on `http://localhost:5000`
-
-### Frontend Setup
-
-1. Navigate to frontend directory:
+4. The API Gateway will be available at `http://localhost:5000`
+5. Start the frontend:
    ```bash
    cd frontend
-   ```
-
-2. Install dependencies:
-   ```bash
    npm install
-   ```
-
-3. Create `.env` file:
-   ```bash
-   cp .env.example .env
-   ```
-
-4. Start the development server:
-   ```bash
    npm start
    ```
 
-The frontend will open at `http://localhost:3000`
+### Option 2: Manual Setup
+
+#### 1. Create PostgreSQL Databases
+```sql
+CREATE DATABASE auth_db;
+CREATE DATABASE issue_db;
+CREATE DATABASE comment_db;
+```
+
+#### 2. Auth Service
+```bash
+cd backend/services/auth
+cp .env.example .env
+npm install
+npm run dev
+```
+
+#### 3. Issue Service
+```bash
+cd backend/services/issue
+cp .env.example .env
+npm install
+npm run dev
+```
+
+#### 4. Comment Service
+```bash
+cd backend/services/comment
+cp .env.example .env
+npm install
+npm run dev
+```
+
+#### 5. API Gateway
+```bash
+cd backend/gateway
+cp .env.example .env
+npm install
+npm run dev
+```
+
+#### 6. Frontend
+```bash
+cd frontend
+cp .env.example .env
+npm install
+npm start
+```
 
 ## API Documentation
 
-See [Backend API Documentation](./backend/docs/API_DOCUMENTATION.md)
+All endpoints are served through the API Gateway at `http://localhost:5000/api/v1`.
 
-### Key Endpoints
-
+### Authentication
 - `POST /api/v1/auth/register` - Register new user
 - `POST /api/v1/auth/login` - Login user
+
+### Users
+- `GET /api/v1/users` - Get all users (protected)
+- `GET /api/v1/users/:id` - Get single user (protected)
+- `PUT /api/v1/users/:id` - Update user (protected)
+
+### Issues
 - `GET /api/v1/issues` - Get all issues
-- `POST /api/v1/issues` - Create new issue
-- `PUT /api/v1/issues/:id` - Update issue
-- `DELETE /api/v1/issues/:id` - Delete issue
-- `POST /api/v1/issues/:id/comments` - Add comment
+- `GET /api/v1/issues/:id` - Get single issue
+- `POST /api/v1/issues` - Create new issue (protected)
+- `PUT /api/v1/issues/:id` - Update issue (protected)
+- `DELETE /api/v1/issues/:id` - Delete issue (protected)
+
+### Comments
+- `GET /api/v1/comments/issue/:issueId` - Get comments for an issue
+- `POST /api/v1/comments/issue/:issueId` - Add comment (protected)
+- `DELETE /api/v1/comments/:id` - Delete comment (protected)
 
 ## Database Schema
 
-### User Model
-```
-{
-  name: String,
-  email: String (unique),
-  password: String (hashed),
-  role: String (user/admin),
-  createdAt: Date,
-  updatedAt: Date
-}
+### Auth Service (auth_db)
+
+#### users
+```sql
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  role ENUM('user', 'admin') DEFAULT 'user',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 ```
 
-### Issue Model
+### Issue Service (issue_db)
+
+#### issues
+```sql
+CREATE TABLE issues (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title VARCHAR(200) NOT NULL,
+  description TEXT NOT NULL,
+  status ENUM('open', 'in-progress', 'resolved', 'closed') DEFAULT 'open',
+  priority ENUM('low', 'medium', 'high', 'critical') DEFAULT 'medium',
+  category VARCHAR(100) DEFAULT 'general',
+  tags JSON DEFAULT '[]',
+  due_date TIMESTAMP NULL,
+  created_by_id UUID NOT NULL,
+  assigned_to_id UUID NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 ```
-{
-  title: String,
-  description: String,
-  status: String (open/in-progress/resolved/closed),
-  priority: String (low/medium/high/critical),
-  assignedTo: UUID (User reference),
-  createdBy: UUID (User reference),
-  category: String,
-  tags: Array,
-  comments: Array,
-  attachments: Array,
-  dueDate: Date,
-  createdAt: Date,
-  updatedAt: Date
-}
+
+### Comment Service (comment_db)
+
+#### comments
+```sql
+CREATE TABLE comments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  text TEXT NOT NULL,
+  issue_id UUID NOT NULL,
+  user_id UUID NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 ```
 
 ## Features
 
 ### Core Features
-- ✅ User Authentication (Login/Register)
-- ✅ JWT Token-based Authorization
-- ✅ Create/Read/Update/Delete Issues
-- ✅ Filter Issues by Status, Priority, Category
-- ✅ Add Comments to Issues
-- ✅ Dashboard with Statistics
-- ✅ Responsive UI Design
+- User Authentication (Login/Register)
+- JWT Token-based Authorization
+- Create/Read/Update/Delete Issues
+- Filter Issues by Status, Priority, Category
+- Add Comments to Issues
+- Dashboard with Statistics
+- Responsive UI Design
 
-### Additional Features (Optional)
-- Issue Attachments
-- Issue Tags
-- Issue Assignment
-- User Roles and Permissions
-- Advanced Search
+### Microservices Features
+- Independent service deployment
+- Database per service
+- API Gateway for unified access
+- Inter-service communication (HTTP)
+- Docker containerization
 
 ## Development Guide
 
 ### Adding a New API Endpoint
 
-1. Create controller in `backend/src/controllers/`
-2. Create routes in `backend/src/routes/`
-3. Add middleware if needed
-4. Update main server file with new routes
+1. Identify which service owns the domain
+2. Create controller in `backend/services/<service>/src/controllers/`
+3. Create routes in `backend/services/<service>/src/routes/`
+4. Add route to Gateway proxy config in `backend/gateway/src/index.js`
+5. Test endpoint through Gateway
 
-### Adding a New Component
+### Adding a New Microservice
 
-1. Create component in `frontend/src/components/`
-2. Create corresponding style file
-3. Import in parent component
-4. Connect to Context API if needed
+1. Create folder in `backend/services/<new-service>/`
+2. Add `package.json`, `Dockerfile`, `.env.example`
+3. Implement standard structure: `config/`, `models/`, `controllers/`, `routes/`, `middleware/`
+4. Add database connection in `config/database.js`
+5. Add proxy route in Gateway `src/index.js`
+6. Add service to `docker-compose.yml`
 
 ## Testing
 
 ### Backend Tests
+Each service has its own test suite:
 ```bash
-cd backend
-npm test
+cd backend/services/auth && npm test
+cd backend/services/issue && npm test
+cd backend/services/comment && npm test
 ```
 
 ### Frontend Tests
 ```bash
-cd frontend
-npm test
+cd frontend && npm test
 ```
 
 ## AI Tools Usage
@@ -243,44 +320,29 @@ See [AI_USAGE_LOG.md](./AI_USAGE_LOG.md) for detailed information.
 
 ## Deployment
 
-### Backend Deployment
-- Can be deployed to Heroku, AWS, DigitalOcean, etc.
-- Set environment variables on hosting platform
-- Ensure PostgreSQL connection is configured
+### Docker Compose
+```bash
+docker-compose up -d
+```
 
-### Frontend Deployment
-- Build for production: `npm run build`
-- Deploy to Vercel, Netlify, GitHub Pages, etc.
-
-## Contributing
-
-This is an individual assignment project. Please follow the guidelines in the course syllabus.
+### Individual Services
+Each service can be deployed independently to platforms like Heroku, AWS, or DigitalOcean.
 
 ## Troubleshooting
 
 ### PostgreSQL Connection Issues
 - Ensure PostgreSQL is running locally
-- Check connection credentials in `.env` file
-- Verify the database `issue_tracker` exists
-- Check firewall and port access (default 5432)
+- Check connection credentials in each service `.env` file
+- Verify the databases exist
 
-### API Connection Issues
-- Ensure backend is running on correct port
-- Check `REACT_APP_API_URL` in frontend `.env`
-- Clear browser cache and cookies
+### Service Unavailable (503)
+- Ensure the target service is running
+- Check `AUTH_SERVICE_URL`, `ISSUE_SERVICE_URL`, `COMMENT_SERVICE_URL` in Gateway `.env`
 
 ### Authentication Issues
-- Ensure JWT_SECRET is set in backend `.env`
+- Ensure `JWT_SECRET` is identical across all services and the Gateway
 - Check token expiration time
-- Verify token is being sent in request headers
 
 ## License
 
 MIT License
-
-## Support
-
-For issues or questions, refer to:
-- Backend README: [./backend/README.md](./backend/README.md)
-- Frontend README: [./frontend/README.md](./frontend/README.md)
-- API Documentation: [./backend/docs/API_DOCUMENTATION.md](./backend/docs/API_DOCUMENTATION.md)

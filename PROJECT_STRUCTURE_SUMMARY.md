@@ -2,10 +2,32 @@
 
 ## Project Overview
 This is a comprehensive full-stack MVC application for issue tracking, built with:
-- **Backend**: Node.js + Express + PostgreSQL/Sequelize
+- **Backend**: Node.js + Express + PostgreSQL/Sequelize (Microservices)
 - **Frontend**: React + Context API + Axios
-- **Database**: PostgreSQL
+- **Database**: PostgreSQL (per service)
 - **Authentication**: JWT (JSON Web Tokens)
+- **Gateway**: Express with http-proxy-middleware
+- **Containerization**: Docker + Docker Compose
+
+## Microservices
+
+### API Gateway (Port 5000)
+- Single entry point for all frontend requests
+- JWT verification
+- Route proxying to downstream services
+
+### Auth Service (Port 5001)
+- User registration, login, profile management
+- Database: `auth_db`
+
+### Issue Service (Port 5002)
+- Issue CRUD, filtering, assignment
+- Database: `issue_db`
+- Inter-service calls to Auth Service for user data
+
+### Comment Service (Port 5003)
+- Comments on issues
+- Database: `comment_db`
 
 ---
 
