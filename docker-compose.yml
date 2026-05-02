@@ -1,0 +1,173 @@
+version: '3.8'
+
+services:
+  postgres-auth:
+    image: postgres:15-alpine
+    container_name: issue-tracker-auth-db
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
+    networks:
+      - issue-tracker-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  postgres-issue:
+    image: postgres:15-alpine
+    container_name: issue-tracker-issue-db
+    environment:
+      POSTGRES_DB: issue_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - issue_db_data:/var/lib/postgresql/data
+    networks:
+      - issue-tracker-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d issue_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  postgres-comment:
+    image: postgres:15-alpine
+    container_name: issue-tracker-comment-db
+    environment:
+      POSTGRES_DB: comment_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5435:5432"
+    volumes:
+      - comment_db_data:/var/lib/postgresql/data
+    networks:
+      - issue-tracker-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d comment_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  auth-service:
+    build:
+      context: ./backend/services/auth
+      dockerfile: Dockerfile
+    container_name: issue-tracker-auth-service
+    environment:
+      PORT: 5001
+      NODE_ENV: development
+      DB_HOST: postgres-auth
+      DB_PORT: 5432
+      DB_NAME: auth_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_DIALECT: postgres
+      JWT_SECRET: your_jwt_secret_key_change_this
+      JWT_EXPIRE: 7d
+      CORS_ORIGIN: "*"
+    ports:
+      - "5001:5001"
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+    networks:
+      - issue-tracker-network
+
+  issue-service:
+    build:
+      context: ./backend/services/issue
+      dockerfile: Dockerfile
+    container_name: issue-tracker-issue-service
+    environment:
+      PORT: 5002
+      NODE_ENV: development
+      DB_HOST: postgres-issue
+      DB_PORT: 5432
+      DB_NAME: issue_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_DIALECT: postgres
+      JWT_SECRET: your_jwt_secret_key_change_this
+      AUTH_SERVICE_URL: http://auth-service:5001
+      CORS_ORIGIN: "*"
+    ports:
+      - "5002:5002"
+    depends_on:
+      postgres-issue:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    networks:
+      - issue-tracker-network
+
+  comment-service:
+    build:
+      context: ./backend/services/comment
+      dockerfile: Dockerfile
+    container_name: issue-tracker-comment-service
+    environment:
+      PORT: 5003
+      NODE_ENV: development
+      DB_HOST: postgres-comment
+      DB_PORT: 5432
+      DB_NAME: comment_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_DIALECT: postgres
+      JWT_SECRET: your_jwt_secret_key_change_this
+      AUTH_SERVICE_URL: http://auth-service:5001
+      CORS_ORIGIN: "*"
+    ports:
+      - "5003:5003"
+    depends_on:
+      postgres-comment:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    networks:
+      - issue-tracker-network
+
+  api-gateway:
+    build:
+      context: ./backend/gateway
+      dockerfile: Dockerfile
+    container_name: issue-tracker-api-gateway
+    environment:
+      PORT: 5000
+      NODE_ENV: development
+      JWT_SECRET: your_jwt_secret_key_change_this
+      AUTH_SERVICE_URL: http://auth-service:5001
+      ISSUE_SERVICE_URL: http://issue-service:5002
+      COMMENT_SERVICE_URL: http://comment-service:5003
+      CORS_ORIGIN: "*"
+      API_PREFIX: /api/v1
+    ports:
+      - "5050:5000"
+    depends_on:
+      auth-service:
+        condition: service_started
+      issue-service:
+        condition: service_started
+      comment-service:
+        condition: service_started
+    networks:
+      - issue-tracker-network
+
+volumes:
+  auth_db_data:
+  issue_db_data:
+  comment_db_data:
+
+networks:
+  issue-tracker-network:
+    driver: bridge
