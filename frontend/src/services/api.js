@@ -1,7 +1,7 @@
 // API Service for making HTTP requests
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api/v1';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5050/api/v1';
 
 const apiClient = axios.create({
   baseURL: API_URL,
@@ -34,16 +34,17 @@ export const authService = {
 // Issue Services
 export const issueService = {
   getAllIssues: () => apiClient.get('/issues'),
-  
   getIssueById: (id) => apiClient.get(`/issues/${id}`),
-  
   createIssue: (issueData) => apiClient.post('/issues', issueData),
-  
   updateIssue: (id, issueData) => apiClient.put(`/issues/${id}`, issueData),
-  
-  deleteIssue: (id) => apiClient.delete(`/issues/${id}`),
-  
-  addComment: (id, text) => apiClient.post(`/issues/${id}/comments`, { text })
+  deleteIssue: (id) => apiClient.delete(`/issues/${id}`)
+};
+
+// Comment Services
+export const commentService = {
+  getComments: (issueId) => apiClient.get(`/comments/issue/${issueId}`),
+  addComment: (issueId, text) => apiClient.post(`/comments/issue/${issueId}`, { text }),
+  deleteComment: (id) => apiClient.delete(`/comments/${id}`)
 };
 
 export default apiClient;
