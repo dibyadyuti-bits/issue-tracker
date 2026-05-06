@@ -42,6 +42,10 @@ const LoginPage = () => {
 
   return (
     <div className="login-page">
+      <div className="brand-text">
+        <span className="brand-icon">&#128203;</span>
+        Issue Tracker
+      </div>
       <div className="auth-container">
         <div className="login-card">
           <div className="login-header">

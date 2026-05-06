@@ -1,12 +1,37 @@
 /* Login Page Styles */
 
 .login-page {
-  min-height: calc(100vh - 60px);
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 20px;
+}
+
+.brand-text {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 800;
+  color: white;
+  letter-spacing: 0.5px;
+}
+
+.brand-icon {
+  width: 36px;
+  height: 36px;
+  background: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .auth-container {
@@ -93,18 +118,9 @@
   align-items: center;
 }
 
-.input-icon {
-  position: absolute;
-  left: 14px;
-  color: #9ca3af;
-  font-size: 16px;
-  pointer-events: none;
-  transition: color 0.2s ease;
-}
-
 .form-group input {
   width: 100%;
-  padding: 12px 14px 12px 42px;
+  padding: 12px 14px;
   border: 2px solid #e5e7eb;
   border-radius: 10px;
   font-size: 15px;
@@ -117,11 +133,6 @@
   border-color: #667eea;
   background-color: white;
   box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
-}
-
-.form-group input:focus + .input-icon,
-.input-wrapper:focus-within .input-icon {
-  color: #667eea;
 }
 
 .form-group input.input-error {
@@ -138,15 +149,16 @@
   right: 14px;
   background: none;
   border: none;
-  color: #9ca3af;
+  color: #667eea;
   cursor: pointer;
-  padding: 0;
-  font-size: 16px;
+  padding: 4px 8px;
+  font-size: 13px;
+  font-weight: 600;
   transition: color 0.2s ease;
 }
 
 .password-toggle:hover {
-  color: #667eea;
+  color: #764ba2;
 }
 
 /* Error Message */
@@ -325,17 +337,27 @@
 @media (max-width: 480px) {
   .login-page {
     padding: 16px;
-    background: white;
   }
 
   .login-card {
     padding: 24px;
-    box-shadow: none;
-    border-radius: 0;
+    border-radius: 12px;
   }
 
   .login-header h1 {
     font-size: 20px;
+  }
+
+  .brand-text {
+    font-size: 16px;
+    top: 16px;
+    left: 16px;
+  }
+
+  .brand-icon {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
   }
 }
 

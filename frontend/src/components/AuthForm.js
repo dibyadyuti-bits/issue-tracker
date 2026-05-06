@@ -67,7 +67,7 @@ const AuthForm = ({ isLogin = true, onSubmit, isLoading = false, serverError = '
     <form onSubmit={form.handleSubmit} className="auth-form" noValidate>
       {serverError && (
         <div className="error-message" role="alert">
-          <span className="error-icon">&#9888;</span>
+          <span className="error-icon">!</span>
           {serverError}
         </div>
       )}
@@ -76,7 +76,6 @@ const AuthForm = ({ isLogin = true, onSubmit, isLoading = false, serverError = '
         <div className="form-group">
           <label htmlFor="name">Full Name</label>
           <div className="input-wrapper">
-            <span className="input-icon">&#128100;</span>
             <input
               type="text"
               id="name"
@@ -99,7 +98,6 @@ const AuthForm = ({ isLogin = true, onSubmit, isLoading = false, serverError = '
       <div className="form-group">
         <label htmlFor="email">Email</label>
         <div className="input-wrapper">
-          <span className="input-icon">&#9993;</span>
           <input
             type="email"
             id="email"
@@ -122,7 +120,6 @@ const AuthForm = ({ isLogin = true, onSubmit, isLoading = false, serverError = '
       <div className="form-group">
         <label htmlFor="password">Password</label>
         <div className="input-wrapper">
-          <span className="input-icon">&#128274;</span>
           <input
             type={showPassword ? 'text' : 'password'}
             id="password"
@@ -143,7 +140,7 @@ const AuthForm = ({ isLogin = true, onSubmit, isLoading = false, serverError = '
             tabIndex={-1}
             aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
-            {showPassword ? '🙈' : '👁️'}
+            {showPassword ? 'Hide' : 'Show'}
           </button>
         </div>
         {getInputError('password') && (
