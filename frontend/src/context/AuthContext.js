@@ -32,12 +32,18 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
   };
 
+  const userRole = user?.role || 'user';
+  const isAdmin = userRole === 'admin';
+  const isAuthenticated = !!token;
+
   const value = {
     user,
     token,
     login,
     logout,
-    isAuthenticated: !!token
+    userRole,
+    isAdmin,
+    isAuthenticated
   };
 
   return (

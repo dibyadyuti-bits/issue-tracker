@@ -40,6 +40,23 @@ export const issueService = {
   deleteIssue: (id) => apiClient.delete(`/issues/${id}`)
 };
 
+// User Services
+export const userService = {
+  getAllUsers: () => apiClient.get('/users'),
+  updateUser: (id, data) => apiClient.put(`/users/${id}`, data)
+};
+
+// Team Services
+export const teamService = {
+  getAllTeams: () => apiClient.get('/teams'),
+  getTeam: (id) => apiClient.get(`/teams/${id}`),
+  createTeam: (data) => apiClient.post('/teams', data),
+  updateTeam: (id, data) => apiClient.put(`/teams/${id}`, data),
+  deleteTeam: (id) => apiClient.delete(`/teams/${id}`),
+  assignUser: (teamId, userId) => apiClient.put(`/teams/${teamId}/assign`, { userId }),
+  removeUser: (teamId, userId) => apiClient.put(`/teams/${teamId}/remove`, { userId })
+};
+
 // Comment Services
 export const commentService = {
   getComments: (issueId) => apiClient.get(`/comments/issue/${issueId}`),

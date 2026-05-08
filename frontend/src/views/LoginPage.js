@@ -26,7 +26,7 @@ const LoginPage = () => {
 
       const { user, token } = response.data;
       login(user, token);
-      navigate('/issues');
+      navigate('/dashboard');
     } catch (error) {
       const message =
         error.response?.data?.message ||
