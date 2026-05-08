@@ -1,11 +1,19 @@
-# Database Schema Documentation - PostgreSQL
+# Database Schema Documentation - PostgreSQL (Microservices)
 
 ## Overview
-This application uses PostgreSQL as the primary database with Sequelize ORM for data management.
+This application uses a **database-per-service** pattern with PostgreSQL and Sequelize ORM. Each microservice owns its own database to ensure independence and data isolation.
+
+| Service | Database | Tables |
+|---------|----------|--------|
+| Auth Service | `auth_db` | `users`, `teams` |
+| Issue Service | `issue_db` | `issues` |
+| Comment Service | `comment_db` | `comments` |
+
+Cross-service references are maintained via UUID fields (not foreign keys) to keep services decoupled.
 
 ---
 
-## Tables
+## Auth Service (`auth_db`)
 
 ### 1. Users Table
 
@@ -19,6 +27,7 @@ CREATE TABLE users (
   email VARCHAR(255) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
   role ENUM('user', 'admin') DEFAULT 'user',
+  team_id UUID NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -28,14 +37,19 @@ CREATE TABLE users (
 - `users_email_unique` (UNIQUE)
 - `users_created_at_idx` (for sorting)
 
+**Associations**:
+- `User.belongsTo(Team)` via `team_id`
+- `Team.hasMany(User)` via `team_id`
+
 **Example Record**:
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
-  "name": "John Doe",
-  "email": "john@example.com",
+  "name": "Arjun Sharma",
+  "email": "arjun@tracker.com",
   "password": "$2a$10$...",
-  "role": "user",
+  "role": "admin",
+  "team_id": "660e8400-e29b-41d4-a716-446655440002",
   "created_at": "2024-05-02T10:30:00Z",
   "updated_at": "2024-05-02T10:30:00Z"
 }
@@ -43,7 +57,44 @@ CREATE TABLE users (
 
 ---
 
-### 2. Issues Table
+### 2. Teams Table
+
+**Table Name**: `teams`
+
+**Columns**:
+```sql
+CREATE TABLE teams (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(100) NOT NULL,
+  description TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**Indexes**:
+- `teams_name_idx` (for lookups)
+
+**Associations**:
+- `Team.hasMany(User)` via `team_id` on `users` table
+- `User.belongsTo(Team)` via `team_id`
+
+**Example Record**:
+```json
+{
+  "id": "660e8400-e29b-41d4-a716-446655440002",
+  "name": "Platform Engineering",
+  "description": "Core infrastructure and platform team",
+  "created_at": "2024-05-02T10:30:00Z",
+  "updated_at": "2024-05-02T10:30:00Z"
+}
+```
+
+---
+
+## Issue Service (`issue_db`)
+
+### 3. Issues Table
 
 **Table Name**: `issues`
 
@@ -58,12 +109,16 @@ CREATE TABLE issues (
   category VARCHAR(100) DEFAULT 'general',
   tags JSON DEFAULT '[]',
   due_date TIMESTAMP NULL,
-  created_by_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  assigned_to_id UUID NULL REFERENCES users(id) ON DELETE SET NULL,
+  created_by_id UUID NOT NULL,
+  assigned_to_id UUID NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
+
+**Cross-Service References**:
+- `created_by_id` -> references a user in `auth_db.users`
+- `assigned_to_id` -> references a user in `auth_db.users`
 
 **Indexes**:
 - `issues_created_by_id_idx` (for foreign key queries)
@@ -93,13 +148,58 @@ CREATE TABLE issues (
 
 ---
 
-## Relationships
+## Comment Service (`comment_db`)
+
+### 4. Comments Table
+
+**Table Name**: `comments`
+
+**Columns**:
+```sql
+CREATE TABLE comments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  text TEXT NOT NULL,
+  issue_id UUID NOT NULL,
+  user_id UUID NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**Cross-Service References**:
+- `issue_id` -> references an issue in `issue_db.issues`
+- `user_id` -> references a user in `auth_db.users`
+
+**Indexes**:
+- `comments_issue_id_idx` (for filtering by issue)
+- `comments_user_id_idx` (for filtering by user)
+- `comments_created_at_idx` (for sorting)
+
+**Example Record**:
+```json
+{
+  "id": "770e8400-e29b-41d4-a716-446655440003",
+  "text": "Working on a fix now. ETA: EOD.",
+  "issue_id": "660e8400-e29b-41d4-a716-446655440001",
+  "user_id": "550e8400-e29b-41d4-a716-446655440001",
+  "created_at": "2024-05-02T12:00:00Z",
+  "updated_at": "2024-05-02T12:00:00Z"
+}
+```
+
+---
+
+## Relationships (Logical)
 
 ```
-users (1) ──── (many) issues
-  │
-  ├─ id ─────────────┬──→ issues.created_by_id
-  │                   └──→ issues.assigned_to_id
+auth_db.users (1) ────┬─── (many) issue_db.issues (created_by_id)
+       │              └─── (many) issue_db.issues (assigned_to_id)
+       │
+       ├── (many) comment_db.comments (user_id)
+       │
+       └── (many) auth_db.teams (team_id)
+
+issue_db.issues (1) ──── (many) comment_db.comments (issue_id)
 ```
 
 ---
@@ -126,25 +226,23 @@ SELECT * FROM issues WHERE priority IN ('high', 'critical') ORDER BY created_at 
 SELECT status, COUNT(*) as count FROM issues GROUP BY status;
 ```
 
-### Find issues with pagination
+### Find comments for an issue
 ```sql
-SELECT * FROM issues 
-ORDER BY created_at DESC 
-LIMIT $1 OFFSET $2;
+SELECT * FROM comments WHERE issue_id = $1 ORDER BY created_at DESC;
 ```
 
-### Get issue with user information
+### Find users on a team
 ```sql
-SELECT 
-  i.*,
-  u_created.name as created_by_name,
-  u_created.email as created_by_email,
-  u_assigned.name as assigned_to_name,
-  u_assigned.email as assigned_to_email
-FROM issues i
-LEFT JOIN users u_created ON i.created_by_id = u_created.id
-LEFT JOIN users u_assigned ON i.assigned_to_id = u_assigned.id
-WHERE i.id = $1;
+SELECT * FROM users WHERE team_id = $1;
+```
+
+### Find team with member count
+```sql
+SELECT t.*, COUNT(u.id) as member_count
+FROM teams t
+LEFT JOIN users u ON u.team_id = t.id
+WHERE t.id = $1
+GROUP BY t.id;
 ```
 
 ---
@@ -156,6 +254,11 @@ WHERE i.id = $1;
 - Password must be at least 6 characters (hashed before storage)
 - Role must be either 'user' or 'admin'
 - Name is required and max 100 characters
+- `team_id` can be null (unassigned)
+
+### Teams Table Validation
+- Name is required and max 100 characters
+- Description is optional
 
 ### Issues Table Validation
 - Title is required and max 200 characters
@@ -163,56 +266,64 @@ WHERE i.id = $1;
 - Status must be one of: open, in-progress, resolved, closed
 - Priority must be one of: low, medium, high, critical
 - Due date must be in future if provided
-- created_by_id must reference valid user
-- assigned_to_id can be null (unassigned)
+- `created_by_id` must reference valid user
+- `assigned_to_id` can be null (unassigned)
+
+### Comments Table Validation
+- Text is required
+- `issue_id` must reference valid issue
+- `user_id` must reference valid user
 
 ---
 
 ## Backup and Recovery
 
-### Backup PostgreSQL Database
+### Backup All Databases
 ```bash
-pg_dump -U postgres -h localhost issue_tracker > backup.sql
+# Auth DB
+docker exec postgres-auth pg_dump -U postgres auth_db > auth_db_backup.sql
+
+# Issue DB
+docker exec postgres-issue pg_dump -U postgres issue_db > issue_db_backup.sql
+
+# Comment DB
+docker exec postgres-comment pg_dump -U postgres comment_db > comment_db_backup.sql
 ```
 
-### Restore PostgreSQL Database
+### Restore All Databases
 ```bash
-psql -U postgres -h localhost -d issue_tracker < backup.sql
-```
+# Auth DB
+docker exec -i postgres-auth psql -U postgres -d auth_db < auth_db_backup.sql
 
-### Docker Backup
-```bash
-docker exec postgres-container pg_dump -U postgres issue_tracker > backup.sql
+# Issue DB
+docker exec -i postgres-issue psql -U postgres -d issue_db < issue_db_backup.sql
+
+# Comment DB
+docker exec -i postgres-comment psql -U postgres -d comment_db < comment_db_backup.sql
 ```
 
 ---
 
 ## Database Setup
 
-### Create Database
+### Create Databases (Manual Setup)
 ```sql
-CREATE DATABASE issue_tracker;
-```
-
-### Create User (Optional)
-```sql
-CREATE USER issue_user WITH PASSWORD 'secure_password';
-GRANT ALL PRIVILEGES ON DATABASE issue_tracker TO issue_user;
+CREATE DATABASE auth_db;
+CREATE DATABASE issue_db;
+CREATE DATABASE comment_db;
 ```
 
 ### Initialize Tables (via Sequelize)
-```bash
-npx sequelize db:migrate
-```
+In development, Sequelize `sync({ alter: true })` automatically creates and updates tables.
 
 ---
 
 ## Performance Considerations
 
 1. **Indexing**: All frequently queried columns are indexed
-2. **Foreign Keys**: Cascade/Set Null options for data integrity
+2. **Cross-service queries**: Issue Service calls Auth Service via HTTP to enrich `createdBy` and `assignedTo` data
 3. **Pagination**: Use LIMIT and OFFSET for large result sets
-4. **Connection Pooling**: Sequelize manages connection pool automatically
+4. **Connection Pooling**: Sequelize manages connection pool automatically per service
 5. **Query Optimization**: Use indexes for WHERE and JOIN clauses
 6. **JSON Storage**: Tags stored as JSON for flexibility
 
@@ -240,8 +351,8 @@ npx sequelize db:migrate
 
 ## Future Enhancements
 
-1. **Comments Table**: Separate table for issue comments
-2. **Attachments Table**: For file uploads
-3. **Audit Logs**: Track all changes
-4. **Activity Table**: Record user actions
-5. **Notifications Table**: For user notifications
+1. **Attachments Table**: For file uploads linked to issues
+2. **Audit Logs**: Track all changes across services
+3. **Activity Table**: Record user actions
+4. **Notifications Table**: For user notifications
+5. **Redis Pub/Sub**: Cross-service event propagation

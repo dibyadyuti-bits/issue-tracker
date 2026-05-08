@@ -5,17 +5,20 @@ A full-stack web application for tracking and managing issues, built with **Reac
 ## Project Overview
 
 This application allows users to create, manage, and track issues with features like:
-- User authentication and role-based access
+- User authentication and role-based access (user / admin)
+- Team management (create teams, assign users, view team issues)
+- User management (inline role changes, team assignment)
 - Issue creation, update, and deletion (CRUD operations)
 - Issue filtering by status, priority, and category
+- Inline status changes via dropdown
 - Comments on issues
-- Dashboard with issue statistics
+- Dashboard with role-specific statistics
 - Responsive UI
 
 ## Architecture
 
 The backend follows a **microservices architecture** with:
-- **API Gateway**: Single entry point (port 5000)
+- **API Gateway**: Single entry point (port 5050)
 - **Auth Service**: User authentication (port 5001)
 - **Issue Service**: Issue management (port 5002)
 - **Comment Service**: Comment management (port 5003)
@@ -124,7 +127,7 @@ issue-tracker/
    docker-compose up --build
    ```
 
-4. The API Gateway will be available at `http://localhost:5000`
+4. The API Gateway will be available at `http://localhost:5050`
 5. Start the frontend:
    ```bash
    cd frontend
@@ -183,7 +186,7 @@ npm start
 
 ## API Documentation
 
-All endpoints are served through the API Gateway at `http://localhost:5000/api/v1`.
+All endpoints are served through the API Gateway at `http://localhost:5050/api/v1`.
 
 ### Authentication
 - `POST /api/v1/auth/register` - Register new user
@@ -192,7 +195,16 @@ All endpoints are served through the API Gateway at `http://localhost:5000/api/v
 ### Users
 - `GET /api/v1/users` - Get all users (protected)
 - `GET /api/v1/users/:id` - Get single user (protected)
-- `PUT /api/v1/users/:id` - Update user (protected)
+- `PUT /api/v1/users/:id` - Update user (protected, admin can change role and teamId)
+
+### Teams
+- `GET /api/v1/teams` - Get all teams with members (protected)
+- `GET /api/v1/teams/:id` - Get single team with members (protected)
+- `POST /api/v1/teams` - Create new team (protected, admin only)
+- `PUT /api/v1/teams/:id` - Update team (protected, admin only)
+- `DELETE /api/v1/teams/:id` - Delete team (protected, admin only)
+- `PUT /api/v1/teams/:id/assign` - Assign user to team (protected, admin only)
+- `PUT /api/v1/teams/:id/remove` - Remove user from team (protected, admin only)
 
 ### Issues
 - `GET /api/v1/issues` - Get all issues
@@ -218,6 +230,18 @@ CREATE TABLE users (
   email VARCHAR(255) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
   role ENUM('user', 'admin') DEFAULT 'user',
+  team_id UUID NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+#### teams
+```sql
+CREATE TABLE teams (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(100) NOT NULL,
+  description TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -257,6 +281,17 @@ CREATE TABLE comments (
 );
 ```
 
+## Frontend Pages
+
+| Route | Page | Access |
+|---|---|---|
+| `/` | LoginPage | Public |
+| `/dashboard` | DashboardPage | Authenticated |
+| `/issues` | IssuesPage | Authenticated |
+| `/issues/new` | NewIssuePage | Authenticated |
+| `/admin/users` | UserManagementPage | Admin only |
+| `/admin/teams` | TeamManagementPage | Admin only |
+
 ## Features
 
 ### Core Features
@@ -264,9 +299,17 @@ CREATE TABLE comments (
 - JWT Token-based Authorization
 - Create/Read/Update/Delete Issues
 - Filter Issues by Status, Priority, Category
+- Inline Status Changes via Dropdown
 - Add Comments to Issues
 - Dashboard with Statistics
 - Responsive UI Design
+- Shared Header/Footer Layout
+
+### Admin Features
+- Team Management (create, delete, assign/remove members)
+- User Management (inline role changes, team assignment)
+- Team-level Issue Overview (stats + issue list per team)
+- Role-based Dashboard (admin sees global stats, user sees personal stats)
 
 ### Microservices Features
 - Independent service deployment

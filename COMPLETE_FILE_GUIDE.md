@@ -1,213 +1,272 @@
-# 📁 Complete Issue Tracker Project Structure - Visual Guide
+# Complete Issue Tracker Project Structure - Visual Guide
 
-## 🏗️ Complete File Tree
+## Complete File Tree
 
 ```
 issue-tracker/
 │
-├── 📄 README.md                              ← Start here! Main project overview
-├── 📄 PROJECT_STRUCTURE_SUMMARY.md           ← This file - complete structure guide  
-├── 📄 ARCHITECTURE.md                        ← System design & data flow
-├── 📄 DATABASE_SCHEMA.md                     ← PostgreSQL tables & relationships
-├── 📄 DEVELOPMENT_GUIDE.md                   ← Coding standards & best practices
-├── 📄 AI_USAGE_LOG.md                        ← AI tools usage & reflection report
-├── 📄 IMPLEMENTATION_CHECKLIST.md            ← Development & deployment checklist
-├── .gitignore                                ← Git ignore configuration
+├── README.md                              # Main project overview
+├── ARCHITECTURE.md                        # System design & data flow
+├── DATABASE_SCHEMA.md                     # PostgreSQL tables (per-service)
+├── DEVELOPMENT_GUIDE.md                   # Coding standards & best practices
+├── AI_USAGE_LOG.md                        # AI tools usage & reflection report
+├── IMPLEMENTATION_CHECKLIST.md            # Development & deployment checklist
+├── docker-compose.yml                     # Docker orchestration
+├── .gitignore                             # Git ignore configuration
 │
 │
-├── 🔧 BACKEND (/backend/)
+├── BACKEND (/backend/)
 │   │
-│   ├── 📦 package.json                       ← Node.js dependencies & scripts
-│   ├── 📄 .env.example                       ← Environment variables template
-│   ├── .gitignore                            ← Backend specific ignore rules
+│   ├── gateway/                           # API Gateway (Port 5050)
+│   │   ├── src/
+│   │   │   ├── middleware/
+│   │   │   │   └── auth.js               # Gateway JWT verification
+│   │   │   └── index.js                  # Proxy routes to services
+│   │   ├── package.json
+│   │   ├── Dockerfile
+│   │   └── .env.example
 │   │
-│   ├── 📚 docs/
-│   │   └── 📄 API_DOCUMENTATION.md           ← Complete API reference
-│   │
-│   ├── 🧪 tests/
-│   │   └── 📄 api.test.js                    ← API endpoint tests
-│   │
-│   └── 💻 src/
+│   └── services/
 │       │
-│       ├── 📄 index.js                       ← Server entry point
+│       ├── auth/                          # Auth Service (Port 5001)
+│       │   ├── src/
+│       │   │   ├── config/
+│       │   │   │   └── database.js       # auth_db PostgreSQL connection
+│       │   │   ├── models/
+│       │   │   │   ├── User.js           # User schema + password hashing
+│       │   │   │   └── Team.js           # Team schema
+│       │   │   ├── controllers/
+│       │   │   │   ├── authController.js # Login & Register handlers
+│       │   │   │   ├── userController.js # User management handlers
+│       │   │   │   └── teamController.js # Team CRUD + assign/remove
+│       │   │   ├── routes/
+│       │   │   │   ├── authRoutes.js     # Authentication endpoints
+│       │   │   │   ├── userRoutes.js     # User endpoints
+│       │   │   │   └── teamRoutes.js     # Team endpoints
+│       │   │   ├── middleware/
+│       │   │   │   └── auth.js           # protect + authorize('admin')
+│       │   │   └── index.js              # Service entry point
+│       │   ├── package.json
+│       │   ├── Dockerfile
+│       │   └── .env.example
 │       │
-│       ├── ⚙️  config/
-│       │   └── database.js                   ← PostgreSQL/Sequelize connection setup
+│       ├── issue/                         # Issue Service (Port 5002)
+│       │   ├── src/
+│       │   │   ├── config/
+│       │   │   │   └── database.js       # issue_db PostgreSQL connection
+│       │   │   ├── models/
+│       │   │   │   └── Issue.js          # Issue schema
+│       │   │   ├── controllers/
+│       │   │   │   └── issueController.js # Issue CRUD operations
+│       │   │   ├── routes/
+│       │   │   │   └── issueRoutes.js    # Issue endpoints
+│       │   │   ├── middleware/
+│       │   │   │   └── auth.js           # JWT verification
+│       │   │   ├── utils/
+│       │   │   │   └── fetchUser.js      # Inter-service HTTP helper
+│       │   │   └── index.js              # Service entry point
+│       │   ├── package.json
+│       │   ├── Dockerfile
+│       │   └── .env.example
 │       │
-│       ├── 📊 models/
-│       │   ├── User.js                       ← User schema (with password hashing)
-│       │   └── Issue.js                      ← Issue schema (with relationships)
-│       │
-│       ├── 🎮 controllers/
-│       │   ├── authController.js             ← Login & Register handlers
-│       │   ├── issueController.js            ← Issue CRUD operations
-│       │   └── userController.js             ← User management handlers
-│       │
-│       ├── 🛣️  routes/
-│       │   ├── authRoutes.js                 ← Authentication endpoints
-│       │   ├── issueRoutes.js                ← Issue endpoints
-│       │   └── userRoutes.js                 ← User management endpoints
-│       │
-│       ├── 🔐 middleware/
-│       │   └── auth.js                       ← JWT verification & authorization
-│       │
-│       ├── 🚀 services/
-│       │   └── IssueService.js               ← Business logic layer
-│       │
-│       ├── ✅ validators/
-│       │   └── validation.js                 ← Input validation functions
-│       │
-│       └── 🛠️  utils/
-│           └── helpers.js                    ← Helper utilities
+│       └── comment/                       # Comment Service (Port 5003)
+│           ├── src/
+│           │   ├── config/
+│           │   │   └── database.js       # comment_db PostgreSQL connection
+│           │   ├── models/
+│           │   │   └── Comment.js        # Comment schema
+│           │   ├── controllers/
+│           │   │   └── commentController.js # Comment CRUD operations
+│           │   ├── routes/
+│           │   │   └── commentRoutes.js  # Comment endpoints
+│           │   ├── middleware/
+│           │   │   └── auth.js           # JWT verification
+│           │   └── index.js              # Service entry point
+│           ├── package.json
+│           ├── Dockerfile
+│           └── .env.example
 │
 │
-├── 🎨 FRONTEND (/frontend/)
+├── FRONTEND (/frontend/)
 │   │
-│   ├── 📦 package.json                       ← React dependencies & scripts
-│   ├── 📄 .env.example                       ← Environment variables template
-│   ├── 📄 .gitignore                         ← Frontend specific ignore rules
-│   ├── 📄 README.md                          ← Frontend setup guide
+│   ├── package.json                       # React dependencies & scripts
+│   ├── .env.example                       # Environment variables template
+│   ├── .gitignore                         # Frontend specific ignore rules
+│   ├── README.md                          # Frontend setup guide
 │   │
-│   ├── 📁 public/
-│   │   └── 📄 index.html                     ← HTML entry point
+│   ├── public/
+│   │   └── index.html                     # HTML entry point
 │   │
-│   └── 💻 src/
+│   └── src/
 │       │
-│       ├── 📄 index.js                       ← React entry point
-│       ├── 📄 App.js                         ← Main App component
-│       ├── 📄 App.css                        ← App styling
-│       ├── 📄 index.css                      ← Global styles
+│       ├── index.js                       # React entry point
+│       ├── App.js                         # Main App component with routing
+│       ├── App.css                        # App styling
+│       ├── index.css                      # Global styles
 │       │
-│       ├── 🧩 components/
-│       │   ├── IssueList.js                  ← Issue list display
-│       │   ├── IssueForm.js                  ← Issue creation/edit form
-│       │   ├── IssueDetail.js                ← Issue detail view
-│       │   ├── AuthForm.js                   ← Login/Register form
-│       │   └── Dashboard.js                  ← Dashboard statistics
+│       ├── components/
+│       │   ├── Layout.js                  # Shared header + footer
+│       │   ├── IssueList.js               # Issue list display
+│       │   ├── IssueForm.js               # Issue creation/edit form
+│       │   ├── IssueDetail.js             # Issue detail view
+│       │   └── AuthForm.js                # Login/Register form
 │       │
-│       ├── 📄 views/
-│       │   ├── HomePage.js                   ← Home page
-│       │   ├── LoginPage.js                  ← Login page
-│       │   └── IssuesPage.js                 ← Issues management page
+│       ├── views/
+│       │   ├── LoginPage.js               # Login page
+│       │   ├── DashboardPage.js           # Role-based dashboard
+│       │   ├── IssuesPage.js              # Issues management + filters
+│       │   ├── NewIssuePage.js            # Dedicated create issue page
+│       │   ├── UserManagementPage.js        # Admin user management
+│       │   └── TeamManagementPage.js      # Admin team management
 │       │
-│       ├── 🌍 context/
-│       │   ├── AuthContext.js                ← Auth state management
-│       │   └── IssueContext.js               ← Issue state management
+│       ├── context/
+│       │   ├── AuthContext.js             # Auth state management
+│       │   └── IssueContext.js            # Issue state management
 │       │
-│       ├── 📡 services/
-│       │   └── api.js                        ← API communication layer
-│       │       └── __tests__/
-│       │           └── api.test.js           ← API service tests
+│       ├── services/
+│       │   └── api.js                     # API communication layer
 │       │
-│       ├── 🎣 hooks/
-│       │   └── useForm.js                    ← Custom form hook
+│       ├── styles/
+│       │   ├── layout.css                 # Header, footer, nav styles
+│       │   ├── dashboard.css              # Dashboard statistics styles
+│       │   ├── issues.css                 # Issues page styles
+│       │   ├── admin.css                  # Admin pages styles
+│       │   └── global.css                 # Global styling
 │       │
-│       ├── 📦 models/
-│       │   ├── User.js                       ← User model/types
-│       │   └── Issue.js                      ← Issue model/types
-│       │
-│       ├── 🛠️  utils/
-│       │   └── helpers.js                    ← Utility functions
-│       │
-│       └── 🎨 styles/
-│           └── global.css                    ← Global CSS styles
+│       └── utils/
+│           └── helpers.js                 # Utility functions
 
 ```
 
 ---
 
-## 📊 File Statistics
+## File Statistics
 
-### Backend Files
+### Gateway Files
+| Category | Count | Location |
+|----------|-------|----------|
+| Middleware | 1 | `src/middleware/` |
+| Config/Entry | 1 | `src/index.js` |
+| Config Files | 3 | Root (package.json, Dockerfile, .env.example) |
+| **Total Gateway** | **5** | |
+
+### Auth Service Files
 | Category | Count | Location |
 |----------|-------|----------|
 | Controllers | 3 | `src/controllers/` |
 | Models | 2 | `src/models/` |
 | Routes | 3 | `src/routes/` |
 | Middleware | 1 | `src/middleware/` |
-| Services | 1 | `src/services/` |
-| Validators | 1 | `src/validators/` |
+| Config | 2 | `src/config/`, `src/index.js` |
+| Config Files | 3 | Root |
+| **Total Auth** | **14** | |
+
+### Issue Service Files
+| Category | Count | Location |
+|----------|-------|----------|
+| Controllers | 1 | `src/controllers/` |
+| Models | 1 | `src/models/` |
+| Routes | 1 | `src/routes/` |
+| Middleware | 1 | `src/middleware/` |
 | Utils | 1 | `src/utils/` |
-| Config | 1 | `src/config/` |
-| Tests | 1 | `tests/` |
-| Docs | 1 | `docs/` |
-| Config Files | 2 | Root |
-| **Total Backend** | **17** |  |
+| Config | 2 | `src/config/`, `src/index.js` |
+| Config Files | 3 | Root |
+| **Total Issue** | **10** | |
+
+### Comment Service Files
+| Category | Count | Location |
+|----------|-------|----------|
+| Controllers | 1 | `src/controllers/` |
+| Models | 1 | `src/models/` |
+| Routes | 1 | `src/routes/` |
+| Middleware | 1 | `src/middleware/` |
+| Config | 2 | `src/config/`, `src/index.js` |
+| Config Files | 3 | Root |
+| **Total Comment** | **9** | |
 
 ### Frontend Files
 | Category | Count | Location |
 |----------|-------|----------|
 | Components | 5 | `src/components/` |
-| Views | 3 | `src/views/` |
+| Views | 6 | `src/views/` |
 | Context | 2 | `src/context/` |
 | Services | 1 | `src/services/` |
-| Models | 2 | `src/models/` |
-| Hooks | 1 | `src/hooks/` |
+| Styles | 5 | `src/styles/` + root |
 | Utils | 1 | `src/utils/` |
-| Styles | 3 | `src/styles/` + root |
-| Tests | 1 | `src/services/__tests__/` |
-| Entry Points | 2 | `src/` |
+| Entry Points | 3 | `src/` |
 | Public | 1 | `public/` |
-| Config Files | 2 | Root |
-| **Total Frontend** | **24** |  |
+| Config Files | 3 | Root |
+| **Total Frontend** | **27** | |
 
 ### Documentation Files
 | Document | Purpose |
 |----------|---------|
 | README.md | Main project overview |
-| PROJECT_STRUCTURE_SUMMARY.md | Structure guide |
 | ARCHITECTURE.md | System architecture |
-| DATABASE_SCHEMA.md | Database design |
+| DATABASE_SCHEMA.md | Database design (per-service) |
 | DEVELOPMENT_GUIDE.md | Best practices |
 | AI_USAGE_LOG.md | AI tools reflection |
 | IMPLEMENTATION_CHECKLIST.md | Development checklist |
-| backend/README.md | Backend setup |
-| frontend/README.md | Frontend setup |
 | backend/docs/API_DOCUMENTATION.md | API reference |
 
 ---
 
-## 🔗 Data & Component Relationships
+## Data & Component Relationships
 
 ### Backend API Structure
 ```
-Authentication
+Authentication (Auth Service)
 ├── POST /api/v1/auth/register
 └── POST /api/v1/auth/login
 
-Issues (CRUD)
+Users (Auth Service)
+├── GET /api/v1/users
+├── GET /api/v1/users/:id
+└── PUT /api/v1/users/:id
+
+Teams (Auth Service)
+├── GET /api/v1/teams
+├── GET /api/v1/teams/:id
+├── POST /api/v1/teams
+├── PUT /api/v1/teams/:id
+├── DELETE /api/v1/teams/:id
+├── PUT /api/v1/teams/:id/assign
+└── PUT /api/v1/teams/:id/remove
+
+Issues (Issue Service)
 ├── GET /api/v1/issues
 ├── GET /api/v1/issues/:id
 ├── POST /api/v1/issues
 ├── PUT /api/v1/issues/:id
-├── DELETE /api/v1/issues/:id
-└── POST /api/v1/issues/:id/comments
+└── DELETE /api/v1/issues/:id
 
-Users
-├── GET /api/v1/users
-├── GET /api/v1/users/:id
-└── PUT /api/v1/users/:id
+Comments (Comment Service)
+├── GET /api/v1/comments/issue/:issueId
+├── POST /api/v1/comments/issue/:issueId
+└── DELETE /api/v1/comments/:id
 ```
 
 ### Frontend Component Hierarchy
 ```
 App
-├── Router
-├── AuthProvider
-├── IssueProvider
-└── Routes
-    ├── HomePage
-    ├── LoginPage (AuthForm)
-    └── IssuesPage
-        ├── Dashboard
-        ├── IssueList
-        ├── IssueForm
-        └── IssueDetail
+├── AuthContext Provider
+├── IssueContext Provider
+├── BrowserRouter
+│   └── Layout
+│       ├── AppHeader (sticky nav: Dashboard, Issues, Users, Teams, Logout)
+│       ├── Routes
+│       │   ├── LoginPage (public)
+│       │   ├── DashboardPage (role-based stats)
+│       │   ├── IssuesPage (table + filters + status dropdown + modal)
+│       │   ├── NewIssuePage (create form)
+│       │   ├── UserManagementPage (admin only)
+│       │   └── TeamManagementPage (admin only)
+│       └── AppFooter
 ```
 
 ---
 
-## 🚀 Quick Navigation Guide
+## Quick Navigation Guide
 
 ### If You Want To...
 
@@ -215,28 +274,25 @@ App
 - Start with: `README.md`
 - Then read: `ARCHITECTURE.md`
 
-**Set Up Backend**
-- Copy: `backend/.env.example` → `.env`
-- Edit: `backend/package.json`
-- Run: `npm install && npm run dev`
-- See: `backend/README.md`
+**Set Up with Docker**
+- Copy: All `.env.example` files to `.env`
+- Run: `docker-compose up --build`
+- Gateway: `http://localhost:5050`
 
 **Set Up Frontend**
-- Copy: `frontend/.env.example` → `.env`
-- Edit: `frontend/package.json`
-- Run: `npm install && npm start`
-- See: `frontend/README.md`
+- Copy: `frontend/.env.example` to `.env`
+- Run: `cd frontend && npm install && npm start`
 
 **Understand API Endpoints**
 - Read: `backend/docs/API_DOCUMENTATION.md`
-- Test: Use Postman with endpoints
+- Test: Use Postman with Gateway at `http://localhost:5050/api/v1`
 
 **Understand Database**
 - Read: `DATABASE_SCHEMA.md`
-- View: Models in `backend/src/models/`
+- View: Models in each service's `src/models/` folder
 
 **Find Code To Implement**
-- Controllers: `backend/src/controllers/`
+- Controllers: `backend/services/*/src/controllers/`
 - Components: `frontend/src/components/`
 - Services: `frontend/src/services/api.js`
 
@@ -246,104 +302,92 @@ App
 
 **Follow Implementation**
 - Use: `IMPLEMENTATION_CHECKLIST.md`
-- Track progress as you develop
-
-**Document Your Work**
-- Add prompts to: `AI_USAGE_LOG.md`
-- Update: `DATABASE_SCHEMA.md` if changes made
-- Document: New features in `API_DOCUMENTATION.md`
 
 ---
 
-## ✨ Key Features Summary
+## Key Features Summary
 
-### ✅ Already Implemented (Templates)
-- User Authentication system
-- Issue CRUD endpoints
-- Database models and relationships
-- React components structure
-- Context API setup
-- API service layer
-- Validation functions
-- Error handling middleware
-- Authentication middleware
-- Database configuration
-
-### 🔄 Ready To Implement
-- Complete form validation on frontend
-- Image/file attachment handling
-- Advanced filtering and search
-- Issue assignment workflow
-- Comment notifications
-- User profile management
-- Admin dashboard
-- Issue priority indicators
-- Due date reminders
-- Pagination for lists
+### Implemented
+- User Authentication (Register/Login) with JWT
+- Role-based Authorization (user / admin)
+- Issue CRUD with inline status dropdowns
+- Issue filtering by status, priority, category
+- Comments on issues
+- Team Management (create, assign, remove, delete)
+- User Management (inline role changes, team assignment)
+- Role-based Dashboard (admin = global stats, user = personal stats)
+- Responsive UI with shared Layout (header + footer)
+- Dedicated New Issue page
+- Microservices with API Gateway
+- Database per service
+- Docker Compose orchestration
 
 ---
 
-## 📋 File Dependencies
+## File Dependencies
 
 ```
 Frontend/Components
-    ↓
-Services/API.js
-    ↓
+    |
+    ▼
+services/api.js
+    |
+    ▼
 Context (AuthContext, IssueContext)
-    ↓
-Backend Routes
-    ↓
-Controllers
-    ↓
-Services/Business Logic
-    ↓
-Models/Schemas
-    ↓
-Database (PostgreSQL)
+    |
+    ▼
+API Gateway (Port 5050)
+    |
+    ├──► Auth Service (Port 5001)
+    ├──► Issue Service (Port 5002)
+    └──► Comment Service (Port 5003)
+         |
+         ▼
+    Models/Schemas
+         |
+         ▼
+    Database (PostgreSQL per service)
 ```
 
 ---
 
-## 🔐 Security Features Included
+## Security Features Included
 
-- ✅ Password hashing with bcryptjs
-- ✅ JWT token authentication
-- ✅ Authorization middleware
-- ✅ Input validation
-- ✅ CORS configuration
-- ✅ Environment variables for secrets
-- ✅ Token expiration
-- ✅ Secure headers recommendations
+- Password hashing with bcryptjs
+- JWT token authentication at Gateway + services
+- Authorization middleware (`protect` + `authorize('admin')`)
+- Input validation
+- CORS configuration
+- Environment variables for all secrets
+- Token expiration
+- Database isolation per service
 
 ---
 
-## 📝 Important Notes
+## Important Notes
 
 1. **Environment Variables**: Never commit `.env` files - always use `.env.example`
-2. **Database**: Update PostgreSQL credentials in backend `.env`
-3. **API URL**: Update frontend `.env` with correct backend API URL
-4. **JWT Secret**: Change default JWT_SECRET in backend `.env`
-5. **Development**: Use `npm run dev` for backend with nodemon
+2. **Databases**: Three PostgreSQL instances (auth_db, issue_db, comment_db)
+3. **API URL**: Frontend calls Gateway at `http://localhost:5050/api/v1`
+4. **JWT Secret**: Must be identical across Gateway and all services
+5. **Development**: Use `docker-compose up --build` to start all services
 6. **Production**: Build frontend with `npm run build`
 
 ---
 
-## 🎯 Next Steps
+## Next Steps
 
-1. Copy environment templates and fill in values
-2. Install dependencies (`npm install` in both folders)
-3. Start backend server (`npm run dev`)
-4. Start frontend server (`npm start`)
-5. Test basic authentication flow
-6. Implement features following IMPLEMENTATION_CHECKLIST.md
-7. Write tests as you develop
-8. Update documentation
-9. Prepare for deployment
+1. Copy all `.env.example` files to `.env` and fill values
+2. Run `docker-compose up --build`
+3. Start frontend: `cd frontend && npm install && npm start`
+4. Log in with seeded credentials:
+   - Admin: `arjun@tracker.com` / `password123`
+   - User: `vikram@tracker.com` / `password123`
+5. Test all features
+6. Update documentation as needed
 
 ---
 
-**Happy Coding! 🚀**
+**Happy Coding!**
 
-This complete MVC structure is ready for your full-stack development.
-All files follow best practices and are organized for maximum productivity.
+This microservices architecture is ready for scalable full-stack development.

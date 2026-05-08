@@ -8,7 +8,7 @@
 │  ┌───────────────────────────────────────────────────────────┐  │
 │  │   React Application (SPA)                                │  │
 │  │  ├── Views (Pages)                                       │  │
-│  │  ├── Components (Reusable)                               │  │
+│  │  ├── Components (Reusable + Layout)                      │  │
 │  │  ├── Context API (State Management)                      │  │
 │  │  └── Services (API Communication)                        │  │
 │  └───────────────────────────────────────────────────────────┘  │
@@ -19,10 +19,10 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │                     API Gateway Layer                            │
 │  ┌───────────────────────────────────────────────────────────┐  │
-│  │  Express.js Gateway (Port 5000)                          │  │
-│  │  ├── JWT Verification                                    │  │
-│  │  ├── Route Proxying to Services                          │  │
-│  │  └── Central Error Handling                              │  │
+│  │  Express.js Gateway (Port 5050)                          │  │
+│  ├── JWT Verification                                       │  │
+│  ├── Route Proxying to Services                           │  │
+│  └── Central Error Handling                               │  │
 │  └───────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
                               │
@@ -36,7 +36,8 @@
 │  ───────────────  │ │ ───────────── │ │   ─────────────────   │
 │  • Register/Login │ │ • CRUD Issues │ │   • Add Comments      │
 │  • User Mgmt      │ │ • Filtering   │ │   • List Comments     │
-│  • JWT Issuance   │ │ • Assignment  │ │   • Delete Comments   │
+│  • Team Mgmt      │ │ • Assignment  │ │   • Delete Comments   │
+│  • JWT Issuance   │ │ • Status CRUD │ │                       │
 └────────┬──────────┘ └───────┬───────┘ └───────────┬───────────┘
          │                    │                     │
     Database              Database              Database
@@ -44,7 +45,8 @@
 ┌────────▼──────────┐ ┌───────▼───────┐ ┌───────────▼───────────┐
 │  PostgreSQL       │ │  PostgreSQL   │ │   PostgreSQL          │
 │  auth_db          │ │  issue_db     │ │   comment_db          │
-│  • users table    │ │  • issues     │ │   • comments          │
+│  • users          │ │  • issues     │ │   • comments          │
+│  • teams          │ │               │ │                       │
 └───────────────────┘ └───────────────┘ └───────────────────────┘
 ```
 
@@ -57,23 +59,24 @@
   - Request routing to appropriate microservice
   - CORS handling
   - Centralized error responses
-- **Port**: 5000
+- **Port**: 5050 (host), 5000 (container)
 
 ### Auth Service
-- **Purpose**: User authentication and management
-- **Database**: `auth_db` (users table)
+- **Purpose**: User authentication, profile, and team management
+- **Database**: `auth_db` (users + teams tables)
 - **Responsibilities**:
   - User registration and login
   - Password hashing with bcrypt
   - JWT token generation
-  - User profile retrieval and updates
+  - User profile retrieval and updates (role, team)
+  - Team CRUD and member assignment
 - **Port**: 5001
 - **Routes**:
   - `POST /auth/register`
   - `POST /auth/login`
-  - `GET /users`
-  - `GET /users/:id`
-  - `PUT /users/:id`
+  - `GET /users`, `GET /users/:id`, `PUT /users/:id`
+  - `GET /teams`, `GET /teams/:id`, `POST /teams`, `PUT /teams/:id`, `DELETE /teams/:id`
+  - `PUT /teams/:id/assign`, `PUT /teams/:id/remove`
 
 ### Issue Service
 - **Purpose**: Issue tracking and management
@@ -85,11 +88,7 @@
 - **Port**: 5002
 - **Inter-service**: Calls Auth Service to populate `createdBy` and `assignedTo` user data
 - **Routes**:
-  - `GET /issues`
-  - `GET /issues/:id`
-  - `POST /issues`
-  - `PUT /issues/:id`
-  - `DELETE /issues/:id`
+  - `GET /issues`, `GET /issues/:id`, `POST /issues`, `PUT /issues/:id`, `DELETE /issues/:id`
 
 ### Comment Service
 - **Purpose**: Comments on issues
@@ -100,9 +99,7 @@
   - Delete comments
 - **Port**: 5003
 - **Routes**:
-  - `GET /comments/issue/:issueId`
-  - `POST /comments/issue/:issueId`
-  - `DELETE /comments/:id`
+  - `GET /comments/issue/:issueId`, `POST /comments/issue/:issueId`, `DELETE /comments/:id`
 
 ## Component Hierarchy
 
@@ -112,28 +109,28 @@ App
 ├── AuthContext Provider
 ├── IssueContext Provider
 ├── BrowserRouter
-│   ├── Navigation
-│   ├── Routes
-│   │   ├── HomePage
-│   │   ├── LoginPage (AuthForm)
-│   │   └── IssuesPage
-│   │       ├── Dashboard
-│   │       ├── IssueList
-│   │       ├── IssueForm
-│   │       └── IssueDetail
-│   └── Footer
+│   └── Layout
+│       ├── AppHeader (sticky nav: Dashboard, Issues, Users, Teams, Logout)
+│       ├── Routes
+│       │   ├── LoginPage (public)
+│       │   ├── DashboardPage (role-based stats)
+│       │   ├── IssuesPage (table + filters + status dropdown + modal)
+│       │   ├── NewIssuePage (create form)
+│       │   ├── UserManagementPage (admin only)
+│       │   └── TeamManagementPage (admin only)
+│       └── AppFooter
 ```
 
 ## Data Flow
 
 ### Issue Creation Flow (Microservices)
 1. User fills IssueForm component
-2. Form submitted → `issueService.createIssue()`
+2. Form submitted -> `issueService.createIssue()`
 3. Request hits API Gateway (`POST /api/v1/issues`)
 4. Gateway verifies JWT
 5. Request proxied to Issue Service
 6. Issue Service creates issue in `issue_db`
-7. Response flows back through Gateway → Frontend
+7. Response flows back through Gateway -> Frontend
 8. IssueContext updated, component re-renders
 
 ### Authentication Flow (Microservices)
@@ -154,38 +151,50 @@ App
 5. Comment Service returns created comment
 6. Frontend appends comment to list
 
+### Team Assignment Flow
+1. Admin opens TeamManagementPage
+2. Selects a team card -> detail panel loads
+3. Chooses user from "Assign a user..." dropdown
+4. `teamService.assignUser(teamId, userId)` sends PUT to Gateway
+5. Gateway proxies to Auth Service `/teams/:id/assign`
+6. Auth Service updates user's `teamId` in `auth_db`
+7. Frontend updates both `teams` and `users` state locally
+
 ## Database Per Service
 
 Each microservice owns its own PostgreSQL database:
 
 | Service | Database | Tables |
 |---------|----------|--------|
-| Auth Service | `auth_db` | `users` |
+| Auth Service | `auth_db` | `users`, `teams` |
 | Issue Service | `issue_db` | `issues` |
 | Comment Service | `comment_db` | `comments` |
 
 ### Cross-service References
 Services reference each other via UUID fields rather than foreign keys:
-- `Issue.createdById` → references a user in `auth_db`
-- `Comment.issueId` → references an issue in `issue_db`
-- `Comment.userId` → references a user in `auth_db`
+- `Issue.createdById` -> references a user in `auth_db`
+- `Issue.assignedToId` -> references a user in `auth_db`
+- `User.teamId` -> references a team in `auth_db`
+- `Comment.issueId` -> references an issue in `issue_db`
+- `Comment.userId` -> references a user in `auth_db`
 
 ## Communication Patterns
 
 ### Synchronous (HTTP)
-- Gateway → Auth Service (register/login)
-- Gateway → Issue Service (issue CRUD)
-- Gateway → Comment Service (comment CRUD)
-- Issue Service → Auth Service (fetch user details for response enrichment)
+- Gateway -> Auth Service (register/login/users/teams)
+- Gateway -> Issue Service (issue CRUD)
+- Gateway -> Comment Service (comment CRUD)
+- Issue Service -> Auth Service (fetch user details for response enrichment)
 
 ### Asynchronous (Future Enhancement)
-- Redis pub/sub for cross-service events (e.g., issue assigned → notify user)
+- Redis pub/sub for cross-service events (e.g., issue assigned -> notify user)
 
 ## Security Implementation
 
 - JWT authentication at API Gateway layer
 - Each service independently validates JWT for direct access
 - Password hashing with bcryptjs in Auth Service
+- Role-based authorization (`protect` + `authorize('admin')`)
 - CORS configured on Gateway
 - Environment variables for all secrets
 - Database isolation per service

@@ -1,159 +1,195 @@
 # Implementation Checklist & Next Steps
 
-## ✅ Project Setup Complete
+## Project Setup Complete
 
-Your Issue Tracker full-stack MVC project structure has been created with:
-- **49+ files** organized in proper MVC architecture
-- **Backend** folder with Node.js/Express setup
+Your Issue Tracker full-stack microservices project structure has been created with:
+- **78+ files** organized in microservices architecture
+- **Gateway** folder with Express proxy
+- **3 Backend Services** (auth, issue, comment) each with own PostgreSQL database
 - **Frontend** folder with React setup
+- **Docker Compose** orchestration
 - Complete documentation and guidelines
 
 ---
 
-## 📋 Pre-Development Setup Checklist
+## Pre-Development Setup Checklist
 
 ### System Requirements
-- [ ] Node.js v14+ installed
-- [ ] PostgreSQL installed locally and `issue_tracker` database created
-- [ ] Git initialized in project
-- [ ] Code editor ready (VS Code recommended)
+- [x] Node.js v14+ installed
+- [x] Docker & Docker Compose installed (recommended)
+- [x] Git initialized in project
+- [x] Code editor ready (VS Code recommended)
 
-### Backend Setup
-- [ ] Navigate to `backend/` directory
-- [ ] Run `npm install`
-- [ ] Create `.env` file from `.env.example`
-- [ ] Update database connection string
-- [ ] Update JWT_SECRET with secure value
-- [ ] Run `npm run dev` to test server
+### Docker Setup (Recommended)
+- [x] `docker-compose.yml` created
+- [x] All services have `Dockerfile`
+- [x] All `.env.example` files created
+- [x] `docker-compose up --build` tested
 
-### Frontend Setup
-- [ ] Navigate to `frontend/` directory
-- [ ] Run `npm install`
-- [ ] Create `.env` file from `.env.example`
-- [ ] Update REACT_APP_API_URL (default: http://localhost:5000/api/v1)
-- [ ] Run `npm start` to test frontend
+### Manual Setup (Alternative)
+- [x] Auth Service can run independently (`npm run dev`)
+- [x] Issue Service can run independently (`npm run dev`)
+- [x] Comment Service can run independently (`npm run dev`)
+- [x] API Gateway can run independently (`npm run dev`)
+- [x] Frontend can run independently (`npm start`)
 
 ---
 
-## 🎯 Development Implementation Order
+## Development Implementation Order
 
-### Phase 1: Backend Foundation (Priority: HIGH)
+### Phase 1: Backend Foundation (COMPLETE)
 1. **Database Setup**
-   - [ ] Verify PostgreSQL connection
-   - [ ] Test database.js connection config
-   - [ ] Create indexes in PostgreSQL (Sequelize sync handles this)
+   - [x] Three PostgreSQL databases created (auth_db, issue_db, comment_db)
+   - [x] Sequelize sync({ alter: true }) handles table creation
+   - [x] User model with bcrypt password hashing
+   - [x] Team model with User association
+   - [x] Issue model with all fields
+   - [x] Comment model with issue/user references
 
 2. **Authentication**
-   - [ ] Implement `authController.js` fully
-   - [ ] Test register endpoint in Postman
-   - [ ] Test login endpoint in Postman
-   - [ ] Verify JWT token generation
-   - [ ] Test token expiration
+   - [x] Register endpoint implemented
+   - [x] Login endpoint with JWT generation
+   - [x] Password hashing with bcryptjs
+   - [x] JWT token expiration configured
+   - [x] Tested with seeded users
 
 3. **Issue Management APIs**
-   - [ ] Implement `issueController.js` fully
-   - [ ] Test all CRUD endpoints
-   - [ ] Verify error handling
-   - [ ] Test with different user roles
+   - [x] All CRUD endpoints implemented
+   - [x] Filtering by status, priority, category
+   - [x] Inter-service user data enrichment (fetchUser.js)
+   - [x] Error handling middleware
 
 4. **User Management APIs**
-   - [ ] Implement `userController.js` fully
-   - [ ] Test user retrieval endpoints
-   - [ ] Verify authorization checks
+   - [x] Get all users endpoint
+   - [x] Update user endpoint (role, teamId)
 
-### Phase 2: Frontend Foundation (Priority: HIGH)
+5. **Team Management APIs**
+   - [x] Get all teams with member count
+   - [x] Create team (admin only)
+   - [x] Assign/remove user from team
+   - [x] Delete team (admin only)
+
+6. **Comment APIs**
+   - [x] Get comments by issue
+   - [x] Add comment
+   - [x] Delete comment
+
+7. **API Gateway**
+   - [x] JWT verification at gateway
+   - [x] Proxy routes to all services
+   - [x] CORS handling
+   - [x] Centralized error responses
+
+### Phase 2: Frontend Foundation (COMPLETE)
 1. **Pages & Layout**
-   - [ ] Create Layout component
-   - [ ] Create Navigation component
-   - [ ] Setup routing in App.js
-   - [ ] Test page navigation
+   - [x] Layout component with header and footer
+   - [x] Navigation with role-based links
+   - [x] Routing in App.js (React Router v6)
+   - [x] Logout functionality
 
 2. **Authentication Views**
-   - [ ] Implement LoginPage.js
-   - [ ] Implement RegisterPage.js
-   - [ ] Connect to auth API
-   - [ ] Test login/register flow
+   - [x] LoginPage.js implemented
+   - [x] Connect to auth API
+   - [x] Token stored in localStorage
+   - [x] Axios interceptor for Bearer token
 
-3. **Issue Management Views**
-   - [ ] Implement IssuesPage.js
-   - [ ] Connect IssueList component
-   - [ ] Connect IssueForm component
-   - [ ] Test issue creation
+3. **Dashboard View**
+   - [x] Role-based dashboard (admin vs user)
+   - [x] Admin: global stats, team overview, urgent issues
+   - [x] User: personal stats, progress ring, my issues
+   - [x] Quick action buttons
 
-### Phase 3: Integration (Priority: HIGH)
-- [ ] Test backend and frontend together
-- [ ] Verify CORS configuration
-- [ ] Test token persistence across pages
-- [ ] Test error messages display
+4. **Issue Management Views**
+   - [x] IssuesPage.js with search and filters
+   - [x] Data table with inline status dropdowns
+   - [x] Detail modal with comments
+   - [x] Delete confirmation
+   - [x] NewIssuePage.js dedicated form
 
-### Phase 4: Advanced Features (Priority: MEDIUM)
-- [ ] Implement comments functionality
-- [ ] Add issue filtering/search
-- [ ] Implement Dashboard
-- [ ] Add user profile management
-- [ ] Implement issue assignment
+5. **Admin Views**
+   - [x] UserManagementPage.js with inline role/team changes
+   - [x] TeamManagementPage.js with assign/remove members
+   - [x] Admin-only route guards
 
-### Phase 5: Testing & Quality (Priority: HIGH)
-- [ ] Write unit tests for backend
+### Phase 3: Integration (COMPLETE)
+- [x] Backend and frontend tested together
+- [x] CORS configured on Gateway
+- [x] Token persistence across pages
+- [x] Error messages displayed
+- [x] Docker Compose orchestration working
+
+### Phase 4: Advanced Features (COMPLETE)
+- [x] Comments functionality
+- [x] Issue filtering/search
+- [x] Dashboard with role-based stats
+- [x] Team management
+- [x] User management (inline role/team)
+- [x] Issue assignment workflow
+- [x] Team-level issue visibility
+
+### Phase 5: Testing & Quality (PENDING)
+- [ ] Write unit tests for backend services
 - [ ] Write component tests for frontend
 - [ ] Test error scenarios
 - [ ] Test edge cases
 - [ ] Perform load testing
 
-### Phase 6: Documentation & Deployment (Priority: MEDIUM)
-- [ ] Complete API documentation with examples
-- [ ] Create deployment guide
-- [ ] Setup CI/CD pipeline
-- [ ] Create user guide
-- [ ] Prepare for code review
+### Phase 6: Documentation & Deployment (COMPLETE)
+- [x] Complete API documentation with examples
+- [x] Database schema documented (per-service)
+- [x] Architecture documentation
+- [x] Development guide updated
+- [x] README updated
 
 ---
 
-## 🔧 Common Implementation Tasks
+## Common Implementation Tasks
 
 ### Create a New API Endpoint
-1. Create route handler in appropriate controller
-2. Define route in routes file
+1. Create controller in `backend/services/<service>/src/controllers/`
+2. Define route in `backend/services/<service>/src/routes/`
 3. Add middleware if needed (auth, validation)
-4. Test with Postman
-5. Update API_DOCUMENTATION.md
+4. Add proxy route in Gateway `src/index.js`
+5. Test with Postman through Gateway
+6. Update `backend/docs/API_DOCUMENTATION.md`
 
 ### Create a New React Component
-1. Create component in `src/components/`
+1. Create component in `frontend/src/components/` or `views/`
 2. Define component structure and props
-3. Create associated styles
+3. Create associated styles in `frontend/src/styles/`
 4. Integrate with services/context if needed
-5. Add to parent component
+5. Add route in `App.js`
 6. Test rendering and interactions
 
 ### Add Database Fields
-1. Update Sequelize models
-2. Add validation if needed
-3. Update controllers to handle new fields
+1. Update Sequelize model in service
+2. Restart container (Sequelize sync({ alter: true }) handles migration)
+3. Update controller to handle new fields
 4. Test with API
-5. Update API_DOCUMENTATION.md
+5. Update `DATABASE_SCHEMA.md`
 
 ---
 
-## 📚 Documentation Updates Needed
+## Documentation Updates Needed
 
 ### As You Develop
-- [ ] Update API_DOCUMENTATION.md with actual endpoint details
-- [ ] Document any environment-specific configuration
-- [ ] Add screenshots/diagrams to README
-- [ ] Update DATABASE_SCHEMA.md with any changes
-- [ ] Document third-party dependencies used
+- [x] Update API_DOCUMENTATION.md with actual endpoint details
+- [x] Update DATABASE_SCHEMA.md with teams table and team_id
+- [x] Update ARCHITECTURE.md with microservices design
+- [x] Update README.md with current features
+- [x] Update COMPLETE_FILE_GUIDE.md with new files
+- [x] Update PROJECT_STRUCTURE_SUMMARY.md with counts
 
 ### Before Submission
 - [ ] Ensure all endpoints are documented
-- [ ] Create architecture diagrams
-- [ ] Write deployment instructions
-- [ ] Include troubleshooting guide
-- [ ] Add code examples for API usage
+- [ ] Architecture diagrams complete
+- [ ] Deployment instructions verified
+- [ ] Troubleshooting guide tested
+- [ ] Code examples for API usage
 
 ---
 
-## 🧪 Testing Checklist
+## Testing Checklist
 
 ### Backend Testing
 - [ ] Test all authentication endpoints
@@ -163,23 +199,24 @@ Your Issue Tracker full-stack MVC project structure has been created with:
 - [ ] Test error responses
 - [ ] Test edge cases (empty data, invalid IDs, etc.)
 - [ ] Test concurrent requests
-- [ ] Test database transactions
+- [ ] Test inter-service communication
 
 ### Frontend Testing
-- [ ] Test user registration flow
-- [ ] Test user login flow
-- [ ] Test issue creation
-- [ ] Test issue update
-- [ ] Test issue deletion
-- [ ] Test search/filter functionality
-- [ ] Test responsive design (mobile, tablet, desktop)
-- [ ] Test error handling
-- [ ] Test token refresh
-- [ ] Test logout functionality
+- [x] Test user registration flow
+- [x] Test user login flow
+- [x] Test issue creation
+- [x] Test issue update (inline status change)
+- [x] Test issue deletion
+- [x] Test search/filter functionality
+- [x] Test responsive design (mobile, tablet, desktop)
+- [x] Test error handling
+- [x] Test logout functionality
+- [x] Test admin features (user/team management)
+- [x] Test role-based dashboard
 
 ---
 
-## 🚀 Git Workflow
+## Git Workflow
 
 ### Initial Setup
 ```bash
@@ -191,10 +228,10 @@ git commit -m "Initial project structure"
 
 ### During Development
 ```bash
-git checkout -b feature/issue-authentication
+git checkout -b feature/team-management
 # Make changes
-git commit -m "[feat] Add user authentication"
-git push origin feature/issue-authentication
+git commit -m "[feat] Add team management"
+git push origin feature/team-management
 # Create pull request
 ```
 
@@ -206,12 +243,18 @@ git status         # Check for uncommitted changes
 
 ---
 
-## 📦 Deployment Preparation
+## Deployment Preparation
+
+### Docker Deployment Checklist
+- [x] `docker-compose.yml` created
+- [x] All services have `Dockerfile`
+- [x] Environment variables in `.env.example`
+- [x] `docker-compose up --build` tested
 
 ### Backend Deployment Checklist
 - [ ] Set environment variables on hosting platform
 - [ ] Configure PostgreSQL cloud instance (e.g., Supabase, AWS RDS)
-- [ ] Update CORS_ORIGIN for production URL
+- [ ] Update `CORS_ORIGIN` for production URL
 - [ ] Test all endpoints on production
 - [ ] Setup logging/monitoring
 - [ ] Configure backup strategy
@@ -228,23 +271,25 @@ git status         # Check for uncommitted changes
 
 ---
 
-## 🐛 Troubleshooting Quick Reference
+## Troubleshooting Quick Reference
 
 | Problem | Solution |
 |---------|----------|
-| Cannot connect to PostgreSQL | Check `.env` credentials, ensure PostgreSQL is running and database exists |
+| Cannot connect to PostgreSQL | Check `.env` credentials, ensure Docker containers running |
 | API returns 401 | Verify JWT token in headers, check token expiration |
-| CORS errors | Update CORS_ORIGIN in backend, clear browser cache |
+| API returns 403 | Ensure user has `admin` role for admin endpoints |
+| CORS errors | Check `CORS_ORIGIN` in Gateway `.env`, clear browser cache |
 | Components not updating | Check Context API setup, verify state updates |
 | Cannot login | Verify email/password, check database for user |
-| API calls failing | Check backend server is running, verify API URL |
+| API calls failing | Check Gateway is running, verify API URL (port 5050) |
+| Service Unavailable (503) | Ensure target service container is running |
+| "Objects are not valid as React child" | Check that objects are rendered as `.name` or `.title`, not directly |
 
 ---
 
-## 📞 Support Resources
+## Support Resources
 
-- Backend README: `backend/README.md`
-- Frontend README: `frontend/README.md`
+- Project README: `README.md`
 - API Documentation: `backend/docs/API_DOCUMENTATION.md`
 - Database Schema: `DATABASE_SCHEMA.md`
 - Architecture: `ARCHITECTURE.md`
@@ -252,18 +297,7 @@ git status         # Check for uncommitted changes
 
 ---
 
-## 🎓 Learning Resources
-
-- Express.js: https://expressjs.com/
-- React: https://react.dev/
-- PostgreSQL: https://www.postgresql.org/docs/
-- JWT: https://jwt.io/
-- Axios: https://axios-http.com/
-- REST API Best Practices: https://restfulapi.net/
-
----
-
-## ✨ Final Reminders
+## Final Reminders
 
 1. **Code Quality**: Follow the development guidelines in DEVELOPMENT_GUIDE.md
 2. **Documentation**: Keep documentation updated as you develop
@@ -276,7 +310,7 @@ git status         # Check for uncommitted changes
 
 ---
 
-## 📝 Submission Checklist
+## Submission Checklist
 
 Before submitting your assignment:
 
@@ -297,4 +331,4 @@ Before submitting your assignment:
 
 ---
 
-Good luck with your development! 🚀
+Good luck with your submission!
