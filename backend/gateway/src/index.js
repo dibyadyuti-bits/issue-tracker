@@ -61,6 +61,10 @@ app.use(`${API_PREFIX}/users`, express.json());
 app.use(`${API_PREFIX}/users`, express.urlencoded({ extended: true }));
 app.use(`${API_PREFIX}/users`, verifyToken, createProxyMiddleware(proxyOptions(AUTH_URL, '/users')));
 
+app.use(`${API_PREFIX}/teams`, express.json());
+app.use(`${API_PREFIX}/teams`, express.urlencoded({ extended: true }));
+app.use(`${API_PREFIX}/teams`, verifyToken, createProxyMiddleware(proxyOptions(AUTH_URL, '/teams')));
+
 app.use(`${API_PREFIX}/issues`, express.json());
 app.use(`${API_PREFIX}/issues`, express.urlencoded({ extended: true }));
 app.use(`${API_PREFIX}/issues`, createProxyMiddleware(proxyOptions(ISSUE_URL, '/issues')));

@@ -2,6 +2,12 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const { connectDB } = require('./config/database');
+const User = require('./models/User');
+const Team = require('./models/Team');
+
+// Associations
+Team.hasMany(User, { as: 'members', foreignKey: 'teamId' });
+User.belongsTo(Team, { as: 'team', foreignKey: 'teamId' });
 
 const app = express();
 
@@ -17,6 +23,7 @@ app.get('/health', (req, res) => {
 
 app.use('/auth', require('./routes/authRoutes'));
 app.use('/users', require('./routes/userRoutes'));
+app.use('/teams', require('./routes/teamRoutes'));
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
