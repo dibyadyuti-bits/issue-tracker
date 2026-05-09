@@ -87,6 +87,42 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 - [ ] Performance tested
 - [ ] Error logging configured
 
+## Running Tests
+
+### Backend Tests (per service)
+
+Auth Service:
+```bash
+cd backend/services/auth
+PORT=0 JWT_SECRET=test-secret JWT_EXPIRE=7d NODE_ENV=test npx jest tests/ --forceExit --runInBand
+```
+
+Issue Service:
+```bash
+cd backend/services/issue
+PORT=0 JWT_SECRET=test-secret JWT_EXPIRE=7d NODE_ENV=test npx jest tests/ --forceExit --runInBand
+```
+
+Comment Service:
+```bash
+cd backend/services/comment
+PORT=0 JWT_SECRET=test-secret JWT_EXPIRE=7d NODE_ENV=test npx jest tests/ --forceExit --runInBand
+```
+
+### Frontend Tests
+
+```bash
+cd frontend
+CI=true npm test -- --watchAll=false
+```
+
+### Test Coverage Summary
+- **Auth Service**: 36 tests (auth, user, team controllers + middleware)
+- **Issue Service**: 13 tests (issue CRUD + filtering)
+- **Comment Service**: 6 tests (comment CRUD)
+- **Frontend**: 19 tests (all API service methods)
+- **Total**: 74 tests
+
 ## Performance Optimization
 
 ### Backend
